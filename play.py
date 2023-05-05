@@ -3,7 +3,6 @@
 # Import and initialize the pygame library
 import numpy as np
 import pygame
-from board import Board
 
 pygame.init()
 
@@ -21,7 +20,17 @@ def AICHOICE(board):
 
 from scipy.signal import convolve2d
 
-
+horizontal_kernel = np.array([[ 1, 1, 1, 1]])
+vertical_kernel = np.transpose(horizontal_kernel)
+diag1_kernel = np.eye(4, dtype=np.uint8)
+diag2_kernel = np.fliplr(diag1_kernel)
+detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]\
+    
+def winning_move(board, player):
+    for kernel in detection_kernels:
+        if (convolve2d(board == player, kernel, mode="valid") == 4).any():
+            return True
+    return False
 
 
 board = np.zeros((6, 7), dtype=np.uint8)
@@ -64,11 +73,13 @@ while running:
         pygame.draw.circle(screen, (255, 0, 0), CircleCords, 50)
         
     else:
+        print("Is Red Winning?: " + str(winning_move(board, 1)))
         board = AICHOICE(board)
         playerOne = True
         pygame.time.wait(500)
-        Board().setBoard(board)
-        print(Board().check_if_game_finished())
+        print("Is AI Winning?: " + str(winning_move(board, 2)))
+        
+
         
 
     # Draw a solid blue circle in the center

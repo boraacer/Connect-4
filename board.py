@@ -2,6 +2,8 @@ import numpy as np
 
 import random
 
+from scipy.signal import convolve2d
+
 class Board:
     def __init__(self):
         self.board_height = 6
@@ -24,32 +26,18 @@ class Board:
     
     def check_if_game_finished(self):
         # check if the connect 4 game on the board is finished
-        for i in range(self.board_height):
-            for j in range(self.board_width):
-                if self.board[i][j] != 0:
-                    # check for horizontal wins
-                    if j <= 3:
-                        if self.board[i][j] == self.board[i][j+1] == self.board[i][j+2] == self.board[i][j+3]:
-                            self.complete = True
-                            return self.reward['win']
-                    # check for vertical wins
-                    if i <= 2:
-                        if self.board[i][j] == self.board[i+1][j] == self.board[i+2][j] == self.board[i+3][j]:
-                            self.complete = True
-                            return self.reward['win']
-                    # check for diagonal wins
-                    if i <= 2 and j <= 3:
-                        if self.board[i][j] == self.board[i+1][j+1] == self.board[i+2][j+2] == self.board[i+3][j+3]:
-                            self.complete = True
-                            return self.reward['win']
-                    if i >= 3 and j <= 3:
-                        if self.board[i][j] == self.board[i-1][j+1] == self.board[i-2][j+2] == self.board[i-3][j+3]:
-                            self.complete = True
-                            return self.reward['win']
-        if self.board_full():
-            self.complete = True
-            return self.reward['draw']
-        return 0
+        horizontal_kernel = np.array([[ 1, 1, 1, 1]])
+        vertical_kernel = np.transpose(horizontal_kernel)
+        diag1_kernel = np.eye(4, dtype=np.uint8)
+        diag2_kernel = np.fliplr(diag1_kernel)
+        detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]
+        
+        for kernel in detection_kernels:
+            if (convolve2d(self.board == 1, kernel, mode="valid") == 4).any():
+                return True
+            if (convolve2d(self.board == 2, kernel, mode="valid") == 4).any():
+                return True
+        return False
     
     def board_full(self):
         for i in range(self.board_width):

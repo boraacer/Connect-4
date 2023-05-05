@@ -134,6 +134,8 @@ memory1 = ReplayBuffer()
 steps_done_1 = 0
 training_history_1 = []
 
+agent_2 = 2
+
 
 # number of episodes to train, this is really small for testing purposes
 num_episodes = 1000
@@ -159,32 +161,7 @@ for i in range(num_episodes):
         steps_done_1 += 1
         state_p1_, reward_p1 = b.make_move(action_p1, 'p1')
         
-        if b.complete:
-            if reward_p1 == 1:
-                # reward p1 for p1's win
-                memory1.add([state_p1, action_p1, 1, None])
-            else:
-                # state action value tuple for a draw
-                memory1.add([state_p1, action_p1, 0.5, None])
-            break
         
-        available_actions = env.get_available_actions()
-        action_p2 = alphabeta_agent(available_actions)
-        state_p2_, reward_p2 = env.make_move(action_p2, 'p2')
-        
-        if b.complete:
-            if reward_p2 == 1:
-                # punish p1 for (random agent) p2's win 
-                memory1.add([state_p1, action_p1, -1, None])
-            else:
-                # state action value tuple for a draw
-                memory1.add([state_p1, action_p1, 0.5, None])
-            break
-        
-        # punish for taking too long to win
-        memory1.add([state_p1, action_p1, -0.05, state_p2_])
-        memory2
-        state_p1 = state_p2_
         
         optimize_step(policy_net_1, target_net_1, memory1, optimizer1)
 
