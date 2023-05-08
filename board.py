@@ -33,11 +33,15 @@ class Board:
         detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]
         
         for kernel in detection_kernels:
-            if (convolve2d(self.board == 1, kernel, mode="valid") == 4).any():
-                return True
-            if (convolve2d(self.board == 2, kernel, mode="valid") == 4).any():
-                return True
-        return False
+            if (convolve2d(self.board == 1, kernel, mode="valid") == 4).any() or (convolve2d(self.board == 2, kernel, mode="valid") == 4).any():
+                self.complete = True
+        if self.complete:
+            return self.reward['win']
+        elif self.board_full():
+            return self.reward['draw']
+        else:
+            return 0
+                
     
     def board_full(self):
         for i in range(self.board_width):

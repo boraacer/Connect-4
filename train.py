@@ -13,6 +13,8 @@ import random
 
 from itertools import count
 
+from copy import deepcopy
+
 # hyperparameters for models
 BATCH_SIZE = 256
 GAMMA = 0.999
@@ -86,7 +88,7 @@ def select_action(policy_model, state, possible_actions, steps=None, training=Tr
         return random.choice(possible_actions)
 
 # play 100 games to sample win rate of agent 1
-def generate_win_rate(p1_policy, p2, env, num_games=WIN_RATE_SAMPLES):
+def generate_win_rate(p1_policy, p2_policy, env, num_games=WIN_RATE_SAMPLES):
     win_moves_lst = []
     wins = 0
     for i in range(num_games):
@@ -106,8 +108,8 @@ def generate_win_rate(p1_policy, p2, env, num_games=WIN_RATE_SAMPLES):
                 wins += 1
                 
             available_actions = env.possible_moves()
-            action_2 = p2.act(state, available_actions)
-            state, reward = env.make_move(action_2, 'p2')
+            action_2 = select_action(p2_policy, state, available_actions, training=False)
+            _state2, _reward2 = env.make_move(action_2, 'p2')
             
     return wins / num_games, np.mean(win_moves_lst)    
 
@@ -134,7 +136,20 @@ memory1 = ReplayBuffer()
 steps_done_1 = 0
 training_history_1 = []
 
-agent_2 = 2
+# neural network for player 1=2
+policy_net_2 = DQN_1(n_actions).to(device)
+target_net_2 = DQN_1(n_actions).to(device)
+
+target_net_2.load_state_dict(policy_net_1.state_dict())
+
+target_net_2.eval()
+
+optimizer2 = torch.optim.Adam(policy_net_1.parameters(), lr=0.0001)
+
+memory2 = ReplayBuffer()
+
+steps_done_2 = 0
+training_history_2 = []
 
 
 # number of episodes to train, this is really small for testing purposes
@@ -154,14 +169,60 @@ for i in range(num_episodes):
         
         if i % 100 == 1:
             print('Episode: ', i + 1, ' Winrate: ', winrate, ' Moves: ', moves)
+            
+    previous_action_p2 = None
     
     for t in count():
         available_actions = b.possible_moves()
-        action_p1 = select_action(state_p1, available_actions, steps_done)
+        action_p1 = select_action(state_p1, available_actions, steps_done_1)
         steps_done_1 += 1
-        state_p1_, reward_p1 = b.make_move(action_p1, 'p1')
+        state_p1_, reward_p1_1 = b.make_move(action_p1, 'p1')
         
+        if b.complete:
+            if reward_p1_1 == 1:
+                reward_p2_1 = -1
+                memory1.add([state_p1, action_p1, 1, None])
+                memory2.add([state_p2, previous_action_p2, -1, None])
+            else:
+                memory1.add([state_p1, action_p1, 0.5, None])
+                memory2.add([state_p2, previous_action_p2, 0.5, None])
+            break
         
+        state_p2 = b.board.copy()
+
+        available_actions = b.possible_moves()
+        action_p2 = select_action(state_p2, available_actions, steps_done_2)
+        previous_action_p2 = deepcopy(action_p2)
+        steps_done_2 += 1
+        state_p2_, reward_p2_2 = b.make_move(action_p2, 'p2')
+
+                
+        if b.complete:
+            if reward_p2_2 == 1:
+                reward_p1_2 = -1
+                memory1.add([state_p1, action_p1, -1, None])
+                memory2.add([state_p2, previous_action_p2, 1, None])
+            else:
+                memory1.add([state_p1, action_p1, 0.5, None])
+                memory2.add([state_p2, previous_action_p2, 0.5, None])
+            break
+        
+        # punish model for taking too long to win
+        memory1.add([state_p1, action_p1, -0.05, state_p1_])
+        memory2.add([state_p2, previous_action_p2, -0.05, state_p2_])
         
         optimize_step(policy_net_1, target_net_1, memory1, optimizer1)
+        optimize_step(policy_net_2, target_net_2, memory2, optimizer2)
+    
+    if i % TARGET_UPDATE == TARGET_UPDATE - 1: # Update the target network
+        target_net_1.load_state_dict(policy_net_1.state_dict())
+        target_net_2.load_state_dict(policy_net_2.state_dict())
 
+print('complete')
+
+# save models
+model_filename_1 = 'DQN_1_player1'
+model_filename_2 = 'DQN_1_player2'
+
+torch.save(policy_net_1.state_dict(), model_filename_1)
+torch.save(policy_net_2.state_dict(), model_filename_2)
