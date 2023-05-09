@@ -1,6 +1,3 @@
-# Simple pygame program
-
-# Import and initialize the pygame library
 import numpy as np
 import pygame
 
@@ -47,28 +44,25 @@ def placeDisc(pos, player):
 running = True
 while running:
 
-    # Did the user click the window close button?
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # Fill the background with white
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                if playerOne == True: 
+                    CirclePos -= 1
+            if event.key == pygame.K_RIGHT:
+                if playerOne == True: 
+                    CirclePos += 1
+            if event.key == pygame.K_RETURN:
+                if playerOne == True: 
+                    placeDisc(CirclePos, 1)
+                    playerOne = False
+                    print(board)
+                
     screen.fill(0)
-    if playerOne == True:
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            if CirclePos > 0:
-                CirclePos -= 1
-                pygame.time.wait(100)
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
-            if CirclePos < 6:
-                CirclePos += 1
-                pygame.time.wait(100)
-        if pygame.key.get_pressed()[pygame.K_RETURN]:
-            placeDisc(CirclePos, 1)
-            playerOne = False
-            pygame.time.wait(150)
-            print(board)
-                        
+    if playerOne == True:        
         CircleCords = (int((RESOLUTION[0]/2))-15-(128*3)+(128*CirclePos+1), int((RESOLUTION[1]/2)-375))
         pygame.draw.circle(screen, (255, 0, 0), CircleCords, 50)
         
@@ -76,7 +70,6 @@ while running:
         print("Is Red Winning?: " + str(winning_move(board, 1)))
         board = AICHOICE(board)
         playerOne = True
-        pygame.time.wait(500)
         print("Is AI Winning?: " + str(winning_move(board, 2)))
         
 
