@@ -1,4 +1,5 @@
 import torch
+
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -16,7 +17,7 @@ from itertools import count
 from copy import deepcopy
 
 # hyperparameters for models
-BATCH_SIZE = 256
+BATCH_SIZE = 32
 GAMMA = 0.999
 
 WIN_RATE_SAMPLES = 100
@@ -31,7 +32,6 @@ EPS_DECAY = 3000
 
 device = 'mps'
 
-# also bora i stole this function because i had no idea how to do this myself
 def optimize_step(policy_model, target_model, mem, optim):
     if len(mem) < BATCH_SIZE:
         return
@@ -41,14 +41,20 @@ def optimize_step(policy_model, target_model, mem, optim):
     state_batch, action_batch, reward_batch, next_state_batch = zip(*[(np.expand_dims(m[0], axis=0), [m[1]], m[2], np.expand_dims(m[3], axis=0)) for m in transitions])
     
     # wrap tensors
-    state_batch = torch.tensor(state_batch, dtype=torch.float, device=device)
-    action_batch = torch.tensor(action_batch, dtype=torch.long, device=device)
+    state_batch = torch.tensor(np.array(state_batch), dtype=torch.float, device=device)
+    
+    tmp = []
+    for i in action_batch:
+        if i == [None]:
+            tmp.append([0])
+        else: tmp.append(i)
+    action_batch = torch.tensor(tmp, dtype=torch.long, device=device)
     reward_batch = torch.tensor(reward_batch, dtype=torch.float, device=device)
 
     state_action_values = policy_model(state_batch).gather(1, action_batch)
     
     non_final_mask = torch.tensor(tuple(map(lambda s_: s_[0] is not None, next_state_batch)), device=device)
-    non_final_next_state = torch.cat([torch.tensor(s_, dtype=torch.float, device=device).unsqueeze(0) for s_ in next_state_batch])
+    non_final_next_state = torch.cat([torch.tensor(s_.astype(np.float32), dtype=torch.float, device=device).unsqueeze(0) for s_ in next_state_batch if s_.shape != (1,)])
     
     # truth from target_net, initialize with zeros since terminal state value = 0
     next_state_values = torch.zeros(BATCH_SIZE, device=device)
@@ -67,7 +73,7 @@ def optimize_step(policy_model, target_model, mem, optim):
 
 # select best possible action using an epsilon-greedy approach
 def select_action(policy_model, state, possible_actions, steps=None, training=True):
-    state = torch.Tensor(state, dtype=torch.float, device=device).unsqueeze(dim=0).unqueeze(dim=0)
+    state = torch.tensor(state, dtype=torch.float, device=device).unsqueeze(dim=0).unsqueeze(dim=0)
     eps = random.random()
     
     if training:
@@ -81,7 +87,7 @@ def select_action(policy_model, state, possible_actions, steps=None, training=Tr
             # select action with highest Q value
             action_vector = policy_model(state)[0, :]
             state_action_vals = [action_vector[action] for action in possible_actions]
-            greedy_action = possible_actions[np.argmax(state_action_vals)]
+            greedy_action = possible_actions[np.argmax(torch.Tensor(state_action_vals).cpu())]
             return greedy_action
     else:
         # if epsilon is greater than threshold then select random action
@@ -174,7 +180,7 @@ for i in range(num_episodes):
     
     for t in count():
         available_actions = b.possible_moves()
-        action_p1 = select_action(state_p1, available_actions, steps_done_1)
+        action_p1 = select_action(policy_net_1, state_p1, available_actions, steps_done_1)
         steps_done_1 += 1
         state_p1_, reward_p1_1 = b.make_move(action_p1, 'p1')
         
@@ -191,7 +197,7 @@ for i in range(num_episodes):
         state_p2 = b.board.copy()
 
         available_actions = b.possible_moves()
-        action_p2 = select_action(state_p2, available_actions, steps_done_2)
+        action_p2 = select_action(policy_net_2, state_p2, available_actions, steps_done_2)
         previous_action_p2 = deepcopy(action_p2)
         steps_done_2 += 1
         state_p2_, reward_p2_2 = b.make_move(action_p2, 'p2')
@@ -221,8 +227,8 @@ for i in range(num_episodes):
 print('complete')
 
 # save models
-model_filename_1 = 'DQN_1_player1'
-model_filename_2 = 'DQN_1_player2'
+model_filename_1 = 'DQN_1_player1.pth'
+model_filename_2 = 'DQN_1_player2.pth'
 
-torch.save(policy_net_1.state_dict(), model_filename_1)
-torch.save(policy_net_2.state_dict(), model_filename_2)
+torch.save(policy_net_1, model_filename_1)
+torch.save(policy_net_2, model_filename_2)
