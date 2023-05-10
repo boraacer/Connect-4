@@ -30,7 +30,7 @@ EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 3000
 
-device = 'mps'
+device = 'cuda'
 
 def optimize_step(policy_model, target_model, mem, optim):
     if len(mem) < BATCH_SIZE:
@@ -227,8 +227,8 @@ for i in range(num_episodes):
 print('complete')
 
 # save models
-model_filename_1 = 'DQN_1_player1.pth'
-model_filename_2 = 'DQN_1_player2.pth'
+model_filename_1 = 'DQN_1_player1_cuda.pth'
+model_filename_2 = 'DQN_1_player2_cuda.pth'
 
 torch.save(policy_net_1, model_filename_1)
 torch.save(policy_net_2, model_filename_2)

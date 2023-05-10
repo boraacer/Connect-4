@@ -4,16 +4,27 @@ import torch
 from board import Board
 from DQN import DQN_1
 from copy import deepcopy
+import random
 
 pygame.init()
 
-def get_action(policy_model, state, possible_actions):
-    with torch.no_grad():
-        # select action with highest Q value
-        action_vector = policy_model(state)[0, :]
-        state_action_vals = [action_vector[action] for action in possible_actions]
-        greedy_action = possible_actions[np.argmax(torch.Tensor(state_action_vals).cpu())]
-        return greedy_action
+def select_action(policy_model, state, possible_actions, steps=None, training=True):
+    state = torch.tensor(state, dtype=torch.float, device='cuda').unsqueeze(dim=0).unsqueeze(dim=0)
+    eps = random.random()
+    
+    threshold = 0
+    
+    if eps > threshold:
+        with torch.no_grad():
+            # select action with highest Q value
+            action_vector = policy_model(state)[0, :]
+            state_action_vals = [action_vector[action] for action in possible_actions]
+            greedy_action = possible_actions[np.argmax(torch.Tensor(state_action_vals).cpu())]
+            return greedy_action
+    else:
+        # if epsilon is greater than threshold then select random action
+        return random.choice(possible_actions)
+
 
 RESOLUTION = (1260, 900)
 
@@ -24,15 +35,17 @@ screen = pygame.display.set_mode([RESOLUTION[0], RESOLUTION[1]])
 CirclePos = 0
 playerOne = True
 
-model_state_dict = torch.load('DQN_1_player2')
-model = DQN_1(7)
-model.load_state_dict(model_state_dict)
+# model_state_dict = torch.load('DQN_1_player2')
+# model = DQN_1(7)
+# model.load_state_dict(model_state_dict)
+model = torch.load('DQN_1_player2_cuda.pth')
 model.eval()
 
 def AICHOICE(board):
     b = Board()
     b.board = board
-    action = get_action(model, b.board, b.possible_moves())
+    action = select_action(model, b.board.copy(), b.possible_moves())
+    print(f"AI ACTION: {action}")
     return action
 
 from scipy.signal import convolve2d
@@ -41,7 +54,7 @@ horizontal_kernel = np.array([[ 1.0, 1.0, 1.0, 1.0]])
 vertical_kernel = np.transpose(horizontal_kernel)
 diag1_kernel = np.eye(4, dtype=np.uint8)
 diag2_kernel = np.fliplr(diag1_kernel)
-detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]\
+detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]
     
 def winning_move(board, player):
     for kernel in detection_kernels:
@@ -50,7 +63,7 @@ def winning_move(board, player):
     return False
 
 
-board = np.zeros((6, 7), dtype=np.float32)
+board = np.zeros((6, 7), dtype=np.uint8)
 
 def placeDisc(pos, player):
     global board
@@ -88,7 +101,7 @@ while running:
         
     else:
         print("Is Red Winning?: " + str(winning_move(board, 1)))
-        board = placeDisc(AICHOICE(board), 2)
+        placeDisc(AICHOICE(board), 2)
         playerOne = True
         print("Is AI Winning?: " + str(winning_move(board, 2)))
         
