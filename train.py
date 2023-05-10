@@ -30,7 +30,7 @@ EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 3000
 
-device = 'cuda'
+device = 'mps'
 
 def optimize_step(policy_model, target_model, mem, optim):
     if len(mem) < BATCH_SIZE:
@@ -159,7 +159,7 @@ training_history_2 = []
 
 
 # number of episodes to train, this is really small for testing purposes
-num_episodes = 1000
+num_episodes = 10000
 
 # training loop
 for i in range(num_episodes):
@@ -227,8 +227,8 @@ for i in range(num_episodes):
 print('complete')
 
 # save models
-model_filename_1 = 'DQN_1_player1_cuda.pth'
-model_filename_2 = 'DQN_1_player2_cuda.pth'
+model_filename_1 = 'DQN_1_player1_mps.pth'
+model_filename_2 = 'DQN_1_player2_mps.pth'
 
 torch.save(policy_net_1, model_filename_1)
 torch.save(policy_net_2, model_filename_2)

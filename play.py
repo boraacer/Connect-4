@@ -8,8 +8,11 @@ import random
 
 pygame.init()
 
+font = pygame.font.SysFont("Arial", 120)
+
+
 def select_action(policy_model, state, possible_actions, steps=None, training=True):
-    state = torch.tensor(state, dtype=torch.float, device='cuda').unsqueeze(dim=0).unsqueeze(dim=0)
+    state = torch.tensor(state, dtype=torch.float, device='cpu').unsqueeze(dim=0).unsqueeze(dim=0)
     eps = random.random()
     
     threshold = 0
@@ -38,7 +41,7 @@ playerOne = True
 # model_state_dict = torch.load('DQN_1_player2')
 # model = DQN_1(7)
 # model.load_state_dict(model_state_dict)
-model = torch.load('DQN_1_player2_cuda.pth')
+model = torch.load('DQN_1_player2_mps.pth', map_location=torch.device('cpu') )
 model.eval()
 
 def AICHOICE(board):
@@ -93,14 +96,15 @@ while running:
                     placeDisc(CirclePos, 1)
                     playerOne = False
                     print(board)
-                
+        
+                    
     screen.fill(0)
     if playerOne == True:        
         CircleCords = (int((RESOLUTION[0]/2))-15-(128*3)+(128*CirclePos+1), int((RESOLUTION[1]/2)-375))
         pygame.draw.circle(screen, (255, 0, 0), CircleCords, 50)
         
     else:
-        print("Is Red Winning?: " + str(winning_move(board, 1)))
+        
         placeDisc(AICHOICE(board), 2)
         playerOne = True
         print("Is AI Winning?: " + str(winning_move(board, 2)))
@@ -115,10 +119,17 @@ while running:
             if board[y][x] == 1:
                 pygame.draw.circle(screen, (255, 0, 0), (int((RESOLUTION[0]/2)-400+(x*128)), int((RESOLUTION[1]/2)-260+(y*110))), 50)
             elif board[y][x] == 2:
-                pygame.draw.circle(screen, (0, 255, 0), (int((RESOLUTION[0]/2)-400+(x*128)), int((RESOLUTION[1]/2)-260+(y*110))), 50)
+                pygame.draw.circle(screen, (0, 0, 255), (int((RESOLUTION[0]/2)-400+(x*128)), int((RESOLUTION[1]/2)-260+(y*110))), 50)
             else:
                 pygame.draw.circle(screen, (0, 0, 0), (int((RESOLUTION[0]/2)-400+(x*128)), int((RESOLUTION[1]/2)-260+(y*110))), 50)
-
+    if winning_move(board, 1) == True:
+            print("Red Wins!")
+            txtsurf = font.render("RED WINS!", True, (255, 0, 0), (0))
+            screen.blit(txtsurf, (int((RESOLUTION[0]/2))-280, int((RESOLUTION[1]/2)-100)))
+    elif winning_move(board, 2) == True:
+            print("Blue Wins!")
+            txtsurf = font.render("BLUE WINS!", True, (0, 0, 255), (0))
+            screen.blit(txtsurf, (int((RESOLUTION[0]/2))-260, int((RESOLUTION[1]/2)-100)))
     # Flip the display
     pygame.display.flip()
 
