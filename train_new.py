@@ -161,7 +161,3 @@ class Agent:
         
         board_values = torch.tensor([torch.from_numpy(training_board.reshape(6,7,1)) for training_board in training_boards])
         
-        
-        # training loop
-        # for epoch in range(10):
-        
