@@ -36,12 +36,12 @@ screen = pygame.display.set_mode([RESOLUTION[0], RESOLUTION[1]])
 
 # Run until the user asks to quit
 CirclePos = 0
-playerOne = True
+playerOne = False
 
 # model_state_dict = torch.load('DQN_1_player2')
 # model = DQN_1(7)
 # model.load_state_dict(model_state_dict)
-model = torch.load('DQN_1_player2_mps.pth', map_location=torch.device('cpu') )
+model = torch.load('DQN_1_player1_mps_randomagent.pth', map_location=torch.device('cpu') )
 model.eval()
 
 def AICHOICE(board):
@@ -87,15 +87,24 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 if playerOne == True: 
-                    CirclePos -= 1
+                    if CirclePos > 0:
+                        CirclePos -= 1
             if event.key == pygame.K_RIGHT:
                 if playerOne == True: 
-                    CirclePos += 1
+                    if CirclePos < 6:
+                        CirclePos += 1
             if event.key == pygame.K_RETURN:
                 if playerOne == True: 
-                    placeDisc(CirclePos, 1)
-                    playerOne = False
-                    print(board)
+                    if board[0][CirclePos] == 0:
+                        placeDisc(CirclePos, 1)
+                        playerOne = False
+                        print(board)
+                    else:
+                        print("Bad Move!")
+                        txtsurf = font.render("Bad Move!!!", True, (255,255,255), (0))
+                        screen.blit(txtsurf, (int((RESOLUTION[0]/2))-260, int((RESOLUTION[1]/2)-100)))
+                        pygame.display.flip()
+                        pygame.time.delay(1000)
         
                     
     screen.fill(0)

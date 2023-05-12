@@ -147,7 +147,7 @@ training_history_1 = []
 
 
 # number of episodes to train, this is really small for testing purposes
-num_episodes = 10000
+num_episodes = 2000
 
 # training loop
 for i in range(num_episodes):
@@ -200,7 +200,7 @@ for i in range(num_episodes):
         if b.complete: break
         
         # punish model for taking too long to win
-        memory1.add([state_p1, action_p1, -0.05, state_p1_])
+        memory1.add([state_p1, action_p1, -0.01, state_p1_])
         
         optimize_step(policy_net_1, target_net_1, memory1, optimizer1)
     
