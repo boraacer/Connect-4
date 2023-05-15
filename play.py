@@ -36,7 +36,7 @@ screen = pygame.display.set_mode([RESOLUTION[0], RESOLUTION[1]])
 
 # Run until the user asks to quit
 CirclePos = 0
-playerOne = False
+playerOne = True
 
 # model_state_dict = torch.load('DQN_1_player2')
 # model = DQN_1(7)
@@ -76,7 +76,7 @@ def placeDisc(pos, player):
             break
 
 
-
+placeDisc(random.randint(0,6), 2)
 running = True
 while running:
 
