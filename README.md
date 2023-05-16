@@ -7,6 +7,9 @@
 
 
 ## Installation
+Using [git](https://git-scm.com/downloads), clone the following repository from github: <br>
+`git clone https://github.com/boraacer/Connect-4.git`<br>
+
 Go into project directory in a terminal and enter <br>
 `pip3 install -r requirements.txt`
 <br>
