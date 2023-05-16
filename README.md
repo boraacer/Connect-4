@@ -15,7 +15,7 @@ Go into project directory in a terminal and enter <br>
 <br>
 To then open the game, use the following command: <br>
 `python3 play.py` <br>
-This command will use the prechained model on the cpu allowing maximum compatability
+This command will use the pretrained model on the cpu allowing maximum compatability
 
 
 ## Training
